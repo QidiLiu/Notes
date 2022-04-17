@@ -4,12 +4,12 @@
     "type": "split",
     "children": [
       {
-        "id": "c9db314939e93da5",
+        "id": "124e8e31ca974720",
         "type": "leaf",
         "state": {
           "type": "markdown",
           "state": {
-            "file": "README.md",
+            "file": "【開發環境折騰指南】Vim技巧.md",
             "mode": "source",
             "source": false
           }
@@ -48,8 +48,21 @@
                 "sortOrder": "alphabetical"
               }
             }
+          },
+          {
+            "id": "c9db314939e93da5",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "__目錄__.md",
+                "mode": "source",
+                "source": false
+              }
+            }
           }
-        ]
+        ],
+        "currentTab": 2
       }
     ],
     "direction": "horizontal",
@@ -69,7 +82,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "README.md",
+                "file": "【開發環境折騰指南】Vim技巧.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -87,11 +100,12 @@
     "width": 300,
     "collapsed": true
   },
-  "active": "c9db314939e93da5",
+  "active": "124e8e31ca974720",
   "lastOpenFiles": [
-    "README.md",
+    "【開發環境折騰指南】Vim技巧.md",
     "【開發環境折騰指南】為_VS_Code_的_Vim_插件配置_vimrc_文件.md",
     "__目錄__.md",
+    "README.md",
     "【開發環境折騰指南】為 VS Code 的 Vim 插件配置 vimrc 文件.md",
     "【開發環境折騰指南】為.md"
   ]
