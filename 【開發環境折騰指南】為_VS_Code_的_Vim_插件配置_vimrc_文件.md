@@ -47,4 +47,7 @@ VS Code 和 Vim 混搭著用既可以享受 VS Code 開箱即用的各種插件�
 
 ![試驗效果](img/Develop_Environment-vimrc_for_VSCode_Vim/2-6.jpg)
 
+一點題外話：相對行數功能對Vim用戶還是很重要的。VS Code 中，只要在設置中搜索“Line Numbers”，設置爲relative就好了[^2]。
+
 [^1]: https://stackoverflow.com/questions/63017771/how-to-modify-change-the-vimrc-file-in-vscode stackoverflow - How to modify/change the vimrc file in VsCode?
+[^2]: https://israynotarray.com/vscode/20211123/335355052/ 是 Ray 不是 Array - 將 VSCode 的程式碼行數改成相對(值)行數
