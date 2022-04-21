@@ -49,5 +49,25 @@ VS Code 和 Vim 混搭著用既可以享受 VS Code 開箱即用的各種插件�
 
 一點題外話：相對行數功能對Vim用戶還是很重要的。VS Code 中，只要在設置中搜索“Line Numbers”，設置爲relative就好了[^2]。
 
+還有一種vim鍵盤映射是用VSCode自帶的Keyboard shortcuts(JSON)實現，在VSCode裏按Ctrl+Shift+P搜索Keyboard shortcuts（JSON）打開後插入下面的内容可以使Normal模式下的z鍵實現原來F5的那套調試功能。沒錯我們Vim用戶就是這麽矯情，F5太遠了我懶得去按！ㄟ(≧◇≦)ㄏ。注意要加到中括號裏，中括號不要刪除。
+
+```json
+{
+    "key": "z",
+    "command": "debug.openView",
+    "when": "!debuggersAvailable && inputFocus && vim.mode == 'Normal'"
+},
+{
+    "key": "z",
+    "command": "workbench.action.debug.continue",
+    "when": "debugState == 'stopped' && inputFocus && vim.mode == 'Normal'"
+},
+{
+    "key": "z",
+    "command": "workbench.action.debug.start",
+    "when": "debuggersAvailable && debugState == 'inactive' && inputFocus && vim.mode == 'Normal'"
+}
+```
+
 [^1]: https://stackoverflow.com/questions/63017771/how-to-modify-change-the-vimrc-file-in-vscode stackoverflow - How to modify/change the vimrc file in VsCode?
 [^2]: https://israynotarray.com/vscode/20211123/335355052/ 是 Ray 不是 Array - 將 VSCode 的程式碼行數改成相對(值)行數
