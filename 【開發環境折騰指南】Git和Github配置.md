@@ -45,6 +45,9 @@ zhihu-url: https://zhuanlan.zhihu.com/p/502052781
     ![進入ssh分欄](img/Develop_Environment-Git_Github/3-2.png)
 3. 按綠色按鈕“New SSH key”，填個名字，然後把之前複製的.pub文件中的内容粘貼到第二個空裏，確定。
 4. 檢查一下是否設置成功：在Git Bash中輸入以下指令，如果返回Hi ***! You've successfully blablabla...就説明設定成功了。如果沒有，就繼續往下看。
+    ```bash
+    ssh -T git@github.com
+    ```
 5. 如果你跟我一樣倒霉，正好在用一個加了限制的網絡，上一步測試可能會發返回ssh: connect to host github.com port 22: Connection timed out。如何解決呢？簡單地說可以給github換個端口[^3]，具體的，在.ssh文件夾裏創建一個新文件，名爲config，如果你用vim，可以在Git Bash裏用以下指令，如果不會用也可以用vscode（把以下指令中的vim換爲code）
     ```bash
     vim ~/.ssh/config

@@ -171,6 +171,50 @@ sudo make install
 pcl_viewer ../test/car6.pcd
 ```
 
+## 4. 生成SSH密鑰并加入GitHub
+
+WSL的Git和Windows系統是分開的，安裝後需要重新設定[^8]。
+
+如果還沒設定git的用戶名和郵箱，需要先設置好，注意一定要與Github的用戶名和郵箱一致，用戶名多加一個空格都會出問題。
+```bash
+git config --global user.name  "xxxx"
+git config --global user.email  "xxxx"
+```
+
+生成SSH密鑰，生成密鑰后系統會先提示你設定密鑰保存位置，建議直接按回車設定爲默認位置。然後會提示你設定密碼，如果不想設就啥也別填，按兩次回車跳過。
+```bash
+ssh-keygen -t ed25519 -C "your_email@example.com"
+```
+
+然後將生成的SSH密鑰添加到ssh-agent。所謂ssh-agent相當於一個密鑰的管理員，首先要把這個管理員“召喚”出來。
+```bash
+eval "$(ssh-agent -s)"
+```
+
+如果輸入上一行指令後系統輸出了Agent pid ***，説明管理員召喚成功了，這時就可以用以下指令將剛才生成的SSH密鑰加入ssh-agent，如果剛才沒有用默認路徑，就需要自己修改一下路徑。
+```bash
+ssh-add ~/.ssh/id_ed25519
+```
+
+如果輸入后顯示Identity added blablabla...就説明添加成功了。
+
+下一步就是登錄Github然後點擊右上角的頭像，在彈出菜單裏選Settings。然後在左邊Access一欄下選SSH and GPG keys。然後點綠色按鈕New SSH key，Title填一個自定義的名字，Key填WSL路徑下.ssh/下的id_ed25519.pub裏的内容，也就是把剛才生成的SSH密鑰的.pub文件裏的内容都複製進來，添加後輸入密碼，確定，就完成了。
+
+如果你和我一樣，是個萬裏挑一的倒霉蛋，在設定完後死活不能clone自己的項目，顯示連接到github.com的22端口連接超時，不要慌，説明你的網做了一些保護機制，把github屏了[^9][^10]。怎麽解決呢？在.ssh/下新建一個名爲config的文件，寫入以下内容，就行了。
+```bash
+Host github.com
+User git
+Hostname ssh.github.com
+PreferredAuthentications publickey
+IdentityFile ~/.ssh/id_ed25519
+Port 443
+```
+
+順便一提，除了克隆自己的項目，還有種驗證github ssh key設置成功的方法是輸入以下指令，如果返回Hi ***! You've successfully blablabla...就説明設定成功了。
+```bash
+ssh -T git@github.com
+```
+
 [^1]: https://docs.microsoft.com/zh-tw/windows/wsl/install Microsoft - 安裝 WSL
 [^2]: https://blog.csdn.net/qq_326324545/article/details/88955605 CSDN - Ubuntu 更新软件的命令
 [^3]: https://blog.csdn.net/songbinxu/article/details/80435665 CSDN - Ubuntu 常用解压与压缩命令
@@ -178,3 +222,6 @@ pcl_viewer ../test/car6.pcd
 [^5]: https://github.com/PointCloudLibrary/pcl/releases/ Github - PointCloudLibrary/pcl - Releases
 [^6]: https://blog.csdn.net/qq_33144323/article/details/80036970 CSDN - ubuntu如何删除文件夹？
 [^7]: https://pcl.readthedocs.io/projects/tutorials/en/latest/compiling_pcl_posix.html Point Cloud Library - Compiling PCL from source on POSIX compliant systems
+[^8]: https://docs.github.com/en/authentication/connecting-to-github-with-ssh Github - Connecting to GitHub with SSH
+[^9]: https://stackoverflow.com/questions/15589682/ssh-connect-to-host-github-com-port-22-connection-timed-out stackoverflow - ssh: connect to host github.com port 22: Connection timed out
+[^10]: https://zhuanlan.zhihu.com/p/502052781 知乎 - 【開發環境折騰指南】Git和Github配置
