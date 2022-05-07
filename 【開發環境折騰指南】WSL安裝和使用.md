@@ -1,10 +1,12 @@
 ---
-title: 【開發環境折騰指南】WSL安裝和使用（含PCL编译安装教程）
+title: 【開發環境折騰指南】WSL安裝和使用（含PCL和OpenCV编译安装教程）
 zhihu-title-image: img/Develop_Environment-0_common_images/0.png
-zhihu-tags: 编程
+zhihu-tags: 计算机视觉, 点云库PCL, OpenCV
 zhihu-url: https://zhuanlan.zhihu.com/p/508281855
 ---
 WSL為Windows下的Linux子系統。本教程適用於Windows 10 （2004版或更新版本）和Windows 11。
+
+在WSL下編譯安裝了PCL和OpenCV，也裝好了需要圖像界面的組件，經測試能正常用OpenCV的imshow()，但不能調用攝像頭。
 
 ## 1. 安裝
 
@@ -100,9 +102,11 @@ sudo apt-get install -y freeglut3-dev pkg-config
 sudo apt-get install -y libxmu-dev libxi-dev
 sudo apt-get install -y mono-complete
 sudo apt-get install -y libopenni-dev libopenni2-dev
+sudo apt-get install -y libgtk2.0-dev
+sudo apt-get install -y xfce4
 ```
 
-保存並退出后運行它即可逐個安裝，中間會有很多次詢問是否安裝，輸入Y即可
+保存並退出后運行它即可逐個安裝，最後一項是安裝圖形界面，安裝時會詢問Default display manager，推薦選選gdm3[^11]。
 ```bash
 sh pcl_dependences.sh
 ```
@@ -171,7 +175,155 @@ sudo make install
 pcl_viewer ../test/car6.pcd
 ```
 
-## 4. 生成SSH密鑰并加入GitHub
+## 4. 編譯安裝OpenCV
+
+由於WSL不支持USB串口通訊，OpenCV安裝好是沒法調用電腦自帶的攝像頭的，需要攝像頭的請另請高明。
+
+OpenCV的依賴跟OpenCV 有些重複的，我把重複的不重複的都寫到上面那個pcl_dependences.sh裏了，OpenCV必要的是前兩行和最後兩行，當然GWSL也要裝，GWSL裏的Display/Audio Auto-Exporting也要開，上面pcl編譯安裝裏講過了我就不贅述了。
+
+剛剛發現WSL（Ubuntu）不自帶gdb，可以自己安裝，這個是調試程序用的。
+```bash
+sudo apt install gdb
+```
+
+下載和編譯很像pcl，同樣是從github上下載最新版本的source code，解壓，打開後在裏面創建一個build文件夾，打開build文件夾，用“cmake ..”生成編譯文件，用“make -j4”編譯，編譯完成後用“sudo make install”安裝。
+
+## 5. VSCode遠程連接WSL的C++開發環境搭建（以OpenCV爲例）
+
+VS Code的開發團隊做了針對WSL的適配，能以遠程連接的方式用Windows環境下安裝的VS Code調試WSL下的程序。
+
+不用在WSL裏裝VS Code，直接打開Windows下安裝的VS Code，安裝以下4個插件（如果你用VS Code打開WSL的文件夾好像會自動提示安裝，具體什麽樣我忘了，直接手動安裝應該也一樣）：
+- Remote: WSL
+- Remote: SSH
+- Remote: SSH: Editing Configuration Files
+- Remote: Containers
+
+在WSL下輸入code，系統會自動安裝一個用來打開Windows下VS Code的東西，具體是啥咱不懂，總之裝好后就打開了自動連接好WSL的VS Code。這時候打開插件欄你會發現插件被分成兩種，原版的和WSL般的，安裝C/C++ Extension Pack，如果之前裝過，插件市場裏會顯示install in WSL，也就是在WSL也要裝一遍。
+
+這時候環境已經配的差不多了，爲了方便調試，我們還得配置.vscode/的那套文件，這裏以OpenCV的調試爲例，需要在.vscode/下創建三個文件，tasks.json、launch.json、c_cpp_properties.json。其中c_cpp_properties是C/C++ IntelliSense的配置文件，需要添加OpenCV的頭文件路徑（如下），其它兩個跟編譯和調試相關，具體項目的解釋可以參考我之前講過的[這篇文章](https://zhuanlan.zhihu.com/p/502655608)[^12]，唯一不太一樣的是在編譯指令裏加了-I和一大串東西，-I和後跟的路徑用來include一些外部庫（這裏是OpenCV），後面一大串-lopencv_***是用來連接opencv各個庫的。下面的配置只適用於WSL（路徑格式跟Windows不太一樣）。
+
+c_cpp_properties.json
+```json
+{
+    "configurations": [
+        {
+            "name": "Linux",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "/usr/local/include/opencv4"
+            ],
+            "defines": [],
+            "compilerPath": "/usr/bin/g++",
+            "cStandard": "c11",
+            "cppStandard": "c++11",
+            "intelliSenseMode": "linux-gcc-x64"
+        }
+    ],
+    "version": 4
+}
+```
+
+tasks.json
+```json
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "build",
+            "type": "shell",
+            "command": "g++",
+            "args": [
+                "-fdiagnostics-color=always",
+                "${file}",
+                "-o",
+                "${fileDirname}/${fileBasenameNoExtension}",
+                "-g",
+                "-Wall",
+                "-static-libgcc",
+                "-static-libstdc++",
+                "-fexec-charset=UTF-8",
+                "-std=c++11",
+                "-I",
+                "/usr/local/include/opencv4",
+                "-lopencv_core",
+                "-lopencv_imgcodecs",
+                "-lopencv_imgproc",
+                "-lopencv_calib3d",
+                "-lopencv_dnn",
+                "-lopencv_features2d",
+                "-lopencv_flann",
+                "-lopencv_gapi",
+                "-lopencv_highgui",
+                "-lopencv_ml",
+                "-lopencv_objdetect",
+                "-lopencv_photo",
+                "-lopencv_stitching",
+                "-lopencv_video",
+                "-lopencv_videoio"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": false,
+                "clear": false
+            },
+            "problemMatcher": "$gcc"
+        },
+        {
+            "label": "run",
+            "type": "shell",
+            "dependsOn": "build",
+            "command": "${fileDirname}/${fileBasenameNoExtension}",
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "shared",
+                "showReuseMessage": false,
+                "clear": false
+            }
+        }
+    ]
+}
+```
+
+launch.json
+```json
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${fileDirname}/${fileBasenameNoExtension}",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${fileDirname}",
+            "environment": [],
+            "externalConsole": false,
+            "internalConsoleOptions": "neverOpen",
+            "MIMode": "gdb",
+            "miDebuggerPath": "/bin/gdb",
+            "preLaunchTask": "build"
+        }
+    ]
+}
+```
+
+配置好就能用F5愉快地進行調試了。
+
+## 6. 生成SSH密鑰并加入GitHub
 
 WSL的Git和Windows系統是分開的，安裝後需要重新設定[^8]。
 
@@ -225,3 +377,5 @@ ssh -T git@github.com
 [^8]: https://docs.github.com/en/authentication/connecting-to-github-with-ssh Github - Connecting to GitHub with SSH
 [^9]: https://stackoverflow.com/questions/15589682/ssh-connect-to-host-github-com-port-22-connection-timed-out stackoverflow - ssh: connect to host github.com port 22: Connection timed out
 [^10]: https://zhuanlan.zhihu.com/p/502052781 知乎 - 【開發環境折騰指南】Git和Github配置
+[^11]: https://blog.dimojang.com/672.html 配置使用 GWSL 实现 Windows 无缝运行 Linux GUI 应用
+[^12]: https://zhuanlan.zhihu.com/p/502655608 知乎 - 【開發環境折騰指南】為 VSCode 配置 C++ 開發環境
