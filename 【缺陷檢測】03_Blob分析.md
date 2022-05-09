@@ -8,7 +8,7 @@ zhihu-url: https://zhuanlan.zhihu.com/p/509261798
 
 ## 1. 定義
 
-Blob分析又稱斑點分析，是對圖像中相同像素的連通域進行分析，該連通域成爲Blob[^2]。當圖像對比度較高時可用Blob分析提取特徵。
+Blob分析又稱斑點分析，是對圖像中相同像素的連通域進行分析，該連通域稱爲Blob[^2]。當圖像對比度較高時可用Blob分析提取特徵。
 
 步驟：
 1. 基於閾值分割出目标區域。按原理可分爲三種：基於亮度，基於RGB，基於自適應（動態閾值），要注意這一步只是將圖像轉爲一個或多個二值圖，并沒有將各個Blob區分開；
@@ -186,6 +186,144 @@ SimpleBlobDetector是個整合版的Blob分析工具[^23][^24]，也可以看作
 2. 用findContours()從每個二值圖中找出連通元素以及它們的中心坐標；
 3. 通過中心坐標將所有二值圖裏的連通元素合爲多個小組，合并力度（集中還是分散）是通過參數minDistBetweenBlobs控制的；
 4. 為各個小組（Blob）記錄中心點和半徑，并返回關鍵點的位置和尺寸。
+
+## 4. 實踐
+
+輸出：
+
+![基於一次大津法的最簡Blob分析，找到了三個輪廓](img/Quality_Detection-03_blob_analyse/4-1.png)
+
+代碼：
+```cpp
+#include <iostream>
+using namespace std;
+
+#include <opencv2/opencv.hpp>
+
+/*
+===============================================================================
+||   Authors   | 劉啟迪(Qidi Liu)
+||-------------|---------------------------------------------------------------
+||   License   | Only for Private use
+||-------------|---------------------------------------------------------------
+|| Description | 使用基於大津法的簡單Blob分析提取元器件區域
+===============================================================================
+*/
+
+#define MORPHOLOGY_OPEN_KERNEL_KSIZE 3
+#define GRID_CELL_NUM_Y 44 
+#define GRID_CELL_NUM_X 66
+
+cv::Mat IMAGE = cv::imread("depthMap/depthMap8.tiff", cv::IMREAD_UNCHANGED);
+
+void showImage(cv::String windows_title, cv::Mat image)
+{
+    cv::Mat _showing_image;
+    image.convertTo(_showing_image, CV_32FC1);
+    cv::imshow(windows_title, _showing_image);
+}
+
+int main(int argc, char*argv[])
+{
+    if (!IMAGE.data)
+    {
+        printf("Input image is empty! Please check! \n");
+        return -1;
+    }
+    else
+    {
+        cv::Mat _showing_original_image;
+        IMAGE.convertTo(_showing_original_image, CV_8UC3);
+        cv::imshow("Original depthmap", _showing_original_image);
+        IMAGE.convertTo(IMAGE, CV_16UC1);
+    }
+
+    cv::Mat _binary_image;
+    cv::threshold(IMAGE, _binary_image, 0 /*ignored value*/, 1, cv::THRESH_OTSU);
+    //showImage("Binary image after Otsu's threshold process", _binary_image);
+
+    cv::Mat _morphology_opened_image;
+    cv::Mat _morphology_open_kernel = cv::getStructuringElement(
+        cv::MORPH_RECT,
+        cv::Size(MORPHOLOGY_OPEN_KERNEL_KSIZE, MORPHOLOGY_OPEN_KERNEL_KSIZE)
+    );
+    cv::morphologyEx(
+        _binary_image,
+        _morphology_opened_image,
+        cv::MORPH_OPEN,
+        _morphology_open_kernel
+    );
+    //showImage("Binary image after morphology process (open)", _morphology_opened_image);
+    
+    _morphology_opened_image.convertTo(_morphology_opened_image, CV_8UC1);
+    cv::Mat _filled_image = cv::Mat::zeros(
+        _morphology_opened_image.rows + 2,
+        _morphology_opened_image.cols + 2,
+        CV_8UC1
+    );
+    /* Debug
+    int seedpoint_y = 3 * (_morphology_opened_image.rows / GRID_CELL_NUM_Y) + 1;
+    int seedpoint_x = 4.5 * (_morphology_opened_image.cols / GRID_CELL_NUM_X) + 1;
+    cv::floodFill(
+        _morphology_opened_image,
+        _filled_image,
+        cv::Point(seedpoint_x, seedpoint_y),
+        cv::Scalar(1)
+    );
+    */
+
+    for (int i = 0; i < GRID_CELL_NUM_Y; i++)
+    {
+        for (int j = 0; j < GRID_CELL_NUM_X; j++)
+        {
+            int seedpoint_y = (i + 0.5) * (_morphology_opened_image.rows / GRID_CELL_NUM_Y) + 1;
+            int seedpoint_x = (j + 0.5) * (_morphology_opened_image.cols / GRID_CELL_NUM_X) + 1;
+            double seedpoint_value = _morphology_opened_image.at<uchar>(seedpoint_y, seedpoint_x);
+            if (seedpoint_value == 1)
+            {
+                /* 
+                //Debug
+                cout << "Debug: " << endl;
+                cout << i << " " << seedpoint_y << endl;
+                cout << j << " " << seedpoint_x << endl;
+                */
+                cv::Mat mask = cv::Mat::zeros(
+                    _morphology_opened_image.rows + 2,
+                    _morphology_opened_image.cols + 2,
+                    CV_8UC1
+                );
+                cv::floodFill(
+                    _morphology_opened_image,
+                    mask,
+                    cv::Point(seedpoint_x, seedpoint_y),
+                    cv::Scalar(1)
+                );
+                _filled_image += mask;
+            }
+        }
+    }
+
+    cv::threshold(_filled_image, _filled_image, 0.5, 1, cv::THRESH_BINARY);    
+    _filled_image = _filled_image(cv::Rect(1, 1, _morphology_opened_image.cols, _morphology_opened_image.rows));
+    //showImage("Binary image after flood fill", _filled_image);
+
+    vector<vector<cv::Point>> _contours;
+    cv::findContours(_filled_image, _contours, cv::RETR_LIST, cv::CHAIN_APPROX_NONE);
+    int _contours_num = _contours.size();
+    cout << "Debug: there are " << _contours_num << " contours detected." << endl;
+    cv::Mat _with_contours_image;
+    IMAGE.convertTo(_with_contours_image, CV_8UC3);
+    cv::cvtColor(_with_contours_image, _with_contours_image, cv::COLOR_GRAY2BGR);
+    
+    for (int i = 0; i < _contours_num; i++)
+        cv::drawContours(_with_contours_image, _contours, i, cv::Scalar(0, 0, 255), 2);
+
+    cv::imshow("Image with contours", _with_contours_image);
+    cv::waitKey(0);
+    
+    return 0;
+}
+```
 
 [^1]: https://www.3dcver.com/detail/p_623728ece4b09dda124fe569/6 3D與SLAM - 3D視覺缺陷檢測：理論、源碼與實戰
 [^2]: https://blog.csdn.net/tercel_zhang/article/details/51227431 CSDN - Blob分析

@@ -188,6 +188,8 @@ sudo apt install gdb
 
 下載和編譯很像pcl，同樣是從github上下載最新版本的source code，解壓，打開後在裏面創建一個build文件夾，打開build文件夾，用“cmake ..”生成編譯文件，用“make -j4”編譯，編譯完成後用“sudo make install”安裝。
 
+記一下一個容易出錯的點：如果xfce和GWSL裝好了，OpenCV的C++版安裝好了，測試的時候imshow沒出窗口也沒報錯，有可能是忘了加“cv::waitKey(0);”，沒加的話程序顯示窗口后立即關閉，所以看不到窗口。
+
 ## 5. VSCode遠程連接WSL的C++開發環境搭建（以OpenCV爲例）
 
 VS Code的開發團隊做了針對WSL的適配，能以遠程連接的方式用Windows環境下安裝的VS Code調試WSL下的程序。
