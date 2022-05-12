@@ -261,9 +261,13 @@ int main(int argc, char*argv[])
         _morphology_opened_image.cols + 2,
         CV_8UC1
     );
-    /* Debug
-    int seedpoint_y = 3 * (_morphology_opened_image.rows / GRID_CELL_NUM_Y) + 1;
-    int seedpoint_x = 4.5 * (_morphology_opened_image.cols / GRID_CELL_NUM_X) + 1;
+
+    /*
+    // 大水漫灌用法示範，在二值圖上用顯然沒有意義，所以去掉了，
+    // 值得注意的是種子點需要手動選擇，另外，大水漫灌的輸出圖比輸入圖胖一圈（長寬各加兩個像素），
+    // 所以等灌完看情況可能還得剪掉外面那一圈
+    int seedpoint_y = 22 * (_morphology_opened_image.rows / GRID_CELL_NUM_Y) + 1;
+    int seedpoint_x = 22 * (_morphology_opened_image.cols / GRID_CELL_NUM_X) + 1;
     cv::floodFill(
         _morphology_opened_image,
         _filled_image,
@@ -272,6 +276,10 @@ int main(int argc, char*argv[])
     );
     */
 
+    /* 
+    // 這一塊是個錯誤示範，當時我對漫水填充的認識不足，以爲它類似於腐蝕算法，
+    // 於是打算用條件判斷確保二值圖内所有亮度為1的地方被“大水漫灌一邊”，
+    // 教科書般的大聰明操作哈哈哈哈哈哈哈哈哈哈
     for (int i = 0; i < GRID_CELL_NUM_Y; i++)
     {
         for (int j = 0; j < GRID_CELL_NUM_X; j++)
@@ -281,12 +289,11 @@ int main(int argc, char*argv[])
             double seedpoint_value = _morphology_opened_image.at<uchar>(seedpoint_y, seedpoint_x);
             if (seedpoint_value == 1)
             {
-                /* 
                 //Debug
                 cout << "Debug: " << endl;
                 cout << i << " " << seedpoint_y << endl;
                 cout << j << " " << seedpoint_x << endl;
-                */
+
                 cv::Mat mask = cv::Mat::zeros(
                     _morphology_opened_image.rows + 2,
                     _morphology_opened_image.cols + 2,
@@ -306,9 +313,11 @@ int main(int argc, char*argv[])
     cv::threshold(_filled_image, _filled_image, 0.5, 1, cv::THRESH_BINARY);    
     _filled_image = _filled_image(cv::Rect(1, 1, _morphology_opened_image.cols, _morphology_opened_image.rows));
     //showImage("Binary image after flood fill", _filled_image);
+    */
 
     vector<vector<cv::Point>> _contours;
-    cv::findContours(_filled_image, _contours, cv::RETR_LIST, cv::CHAIN_APPROX_NONE);
+    //cv::findContours(_filled_image, _contours, cv::RETR_LIST, cv::CHAIN_APPROX_NONE);
+    cv::findContours(morphology_opened_image, _contours, cv::RETR_LIST, cv::CHAIN_APPROX_NONE);
     int _contours_num = _contours.size();
     cout << "Debug: there are " << _contours_num << " contours detected." << endl;
     cv::Mat _with_contours_image;
