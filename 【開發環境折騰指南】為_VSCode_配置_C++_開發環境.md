@@ -10,7 +10,7 @@ zhihu-url: https://zhuanlan.zhihu.com/p/502655608
 
 1. 從[VSCode官網](https://code.visualstudio.com/)安裝VSCode[^2]，勾選上加入環境變量的選項。
 2. 在VSCode中安裝**插件C/C++**。
-3. 下載MinGW-w64：[下載地址](https://sourceforge.net/projects/mingw-w64/files/)，點進去后往下拉，選擇**MinGW-W64 GCC-8.1.0下的x86_64-win32-seh**[^3]。
+3. 下載MinGW-w64：[下載地址](https://sourceforge.net/projects/mingw-w64/files/)，點進去后往下拉，選擇**MinGW-W64 GCC-8.1.0下的x86_64-posix-seh**[^3]。
 4. 解壓后將文件夾**mingw64**移動到目錄C:\Program File\下。
 5. 將mingw64下的\bin文件夾的完整地址添加到用戶的環境變量Path中。（win10下，進入Path后有個瀏覽按鈕，可以很輕鬆地找到mingw64下的bin目錄並加入Path，不用複製，很方便）
 6. 重新啓動電腦。
